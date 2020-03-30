@@ -1,0 +1,92 @@
+OBJECT Codeunit 50000 SFTPManagement
+{
+  OBJECT-PROPERTIES
+  {
+    Date=18/12/19;
+    Time=12:21:09;
+    Modified=Yes;
+    Version List=AntonioSilva;
+  }
+  PROPERTIES
+  {
+    OnRun=VAR
+            SFTPSession@1000 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.Session";
+          BEGIN
+            // ********************** EXAMPLE **********************
+
+            // OpenSFTPSession(SFTPSession, 'uri', 'username', 'password', 'sshkey_notmandatory');
+            // PutFilesSFTP(SFTPSession, 'C:\Textfile.txt', '/SFTPFolder/');
+            // GetFilesSFTP(SFTPSession,'/SFTPFolder/', 'C:\SFTP\');
+            // SynchronizeDirectoriesSFTP(SFTPSession, 'C:\SFTP\', '/');
+            // CloseSFTPSession();
+          END;
+
+  }
+  CODE
+  {
+
+    LOCAL PROCEDURE OpenSFTPSession@93(VAR pSFTPSession@1000 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.Session";pHostName@1002 : Text;pUserName@1003 : Text;pPassword@1004 : Text;pSSHHostKey@1005 : Text);
+    VAR
+      SFTPSessionOptions@1001 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.SessionOptions";
+      SFTPProtocol@1006 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.Protocol";
+    BEGIN
+      WITH SFTPSessionOptions DO BEGIN
+        SFTPSessionOptions := SessionOptions();
+        Protocol := SFTPProtocol.Sftp;
+        HostName := pHostName;
+        UserName := pUserName;
+        Password := pPassword;
+        IF pSSHHostKey = '' THEN
+          GiveUpSecurityAndAcceptAnySshHostKey(TRUE)
+        ELSE
+          SshHostKeyFingerprint := pSSHHostKey;
+      END;
+      pSFTPSession := pSFTPSession.Session();
+      pSFTPSession.Open(SFTPSessionOptions);
+    END;
+
+    LOCAL PROCEDURE CloseSFTPSession@100(VAR pSFTPSession@1000 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.Session");
+    BEGIN
+      pSFTPSession.Dispose();
+    END;
+
+    LOCAL PROCEDURE PutFilesSFTP@104(VAR pSFTPSession@1000 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.Session";FromLocalPath@1004 : Text;ToRemotePath@1005 : Text);
+    VAR
+      SFTPTransferOptions@1002 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.TransferOptions";
+      SFTPTransferOperationResult@1001 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.TransferOperationResult";
+      SFTPTransferMode@1003 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.TransferMode";
+    BEGIN
+      SFTPTransferOptions := SFTPTransferOptions.TransferOptions();
+      SFTPTransferOptions.TransferMode := SFTPTransferMode.Binary;
+      SFTPTransferOperationResult := pSFTPSession.PutFiles(FromLocalPath, ToRemotePath, FALSE, SFTPTransferOptions);
+      SFTPTransferOperationResult.Check();
+    END;
+
+    LOCAL PROCEDURE GetFilesSFTP@105(VAR pSFTPSession@1002 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.Session";FromRemotePath@1001 : Text;ToLocalPath@1000 : Text);
+    VAR
+      SFTPTransferOptions@1005 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.TransferOptions";
+      SFTPTransferOperationResult@1004 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.TransferOperationResult";
+      SFTPTransferMode@1003 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.TransferMode";
+    BEGIN
+      SFTPTransferOptions := SFTPTransferOptions.TransferOptions();
+      SFTPTransferOptions.TransferMode := SFTPTransferMode.Binary;
+      SFTPTransferOperationResult := pSFTPSession.GetFiles(FromRemotePath, ToLocalPath, FALSE, SFTPTransferOptions);
+      SFTPTransferOperationResult.Check();
+    END;
+
+    LOCAL PROCEDURE SynchronizeDirectoriesSFTP@106(VAR pSFTPSession@1000 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.Session";LocalPath@1006 : Text;RemotePath@1005 : Text);
+    VAR
+      SFTPSyncMode@1003 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.SynchronizationMode";
+      SFTPSyncCriteria@1002 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.SynchronizationCriteria";
+      SFTPSyncResult@1001 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.SynchronizationResult";
+      SFTPTransferOptions@1004 : DotNet "'WinSCPnet, Version=1.6.5.10071, Culture=neutral, PublicKeyToken=2271ec4a3c56d0bf'.WinSCP.TransferOptions";
+    BEGIN
+      SFTPSyncResult := pSFTPSession.SynchronizeDirectories(SFTPSyncMode.Local, LocalPath, RemotePath, FALSE, FALSE, SFTPSyncCriteria.Time, SFTPTransferOptions);
+      SFTPSyncResult.Check();
+    END;
+
+    BEGIN
+    END.
+  }
+}
+
